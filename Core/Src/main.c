@@ -38,7 +38,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define countof(array) (sizeof(array) / sizeof(*(array)))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -88,16 +87,22 @@ int main(void)
     MX_GPIO_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-
+    OLED_Init();
+    OLED_WriteChar(ch_A, 63, 15);
+    OLED_WriteChinese(chinese_qing, 63, 31);
+    OLED_Update();
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+    while (1)
+    {
+        OLED_WriteChar(&OLED_Number[16 * 5], 63, 47);
+        OLED_Update();
 
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-
+        /* USER CODE END WHILE */
+        /* USER CODE BEGIN 3 */
+    }
     /* USER CODE END 3 */
 }
 
