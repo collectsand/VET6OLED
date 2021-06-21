@@ -1,6 +1,8 @@
 #ifndef _OLED_H_
 #define _OLED_H_
 
+#define _OLED_USE_DMA_
+
 #define DC_HIGH HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_SET)
 #define DC_LOW HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_RESET)
 
@@ -33,7 +35,7 @@ extern uint8_t GRAM[1024];
 void OLED_Init();
 void OLED_Reset();
 void OLED_WriteCmd(uint8_t cmd);
-void OLED_WriteData(uint8_t *buffer, uint8_t buffersize);
+void OLED_WriteData(uint8_t *buffer, uint16_t buffersize);
 void OLED_Clean();
 void OLED_Update();
 void OLED_DrawPixel(uint8_t x, uint8_t y, uint8_t color);

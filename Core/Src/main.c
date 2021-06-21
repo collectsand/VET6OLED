@@ -19,7 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
+#include "i2c.h"
 #include "spi.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -49,7 +52,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -85,22 +88,27 @@ int main(void)
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
+    MX_DMA_Init();
     MX_SPI1_Init();
+    MX_I2C1_Init();
+    MX_TIM1_Init();
     /* USER CODE BEGIN 2 */
+    HAL_TIM_Base_Start_IT(&htim1);
     OLED_Init();
     OLED_WriteChar(ch_A, 63, 15);
     OLED_WriteChinese(chinese_qing, 63, 31);
+    OLED_WriteChar(&OLED_Number[16 * 5], 63, 47);
     OLED_Update();
+
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1)
     {
-        OLED_WriteChar(&OLED_Number[16 * 5], 63, 47);
-        OLED_Update();
 
         /* USER CODE END WHILE */
+
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
@@ -144,6 +152,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim == &htim1)
+    {
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+    }
+}
 
 /* USER CODE END 4 */
 
