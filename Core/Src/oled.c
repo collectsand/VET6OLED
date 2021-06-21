@@ -12,7 +12,7 @@ void OLED_Init()
     OLED_WriteCmd(0xAE); //关闭显示
 
     OLED_WriteCmd(0x20); //寻址模式
-    OLED_WriteCmd(0x02); //页寻址
+    OLED_WriteCmd(0x00); //水平寻址
 
     OLED_WriteCmd(0xAE); //关闭显示
     OLED_WriteCmd(0xD5); //设置时钟分频因子,震荡频率
@@ -64,15 +64,23 @@ void OLED_WriteCmd(uint8_t cmd)
     HAL_SPI_Transmit(&hspi1, &cmd, 1, HAL_MAX_DELAY);
 }
 
-void OLED_WriteData(uint8_t *buffer, uint8_t buffersize)
+void OLED_WriteData(uint8_t *buffer, uint16_t buffersize)
 {
+#ifdef _OLED_USE_DMA_
+    if (hspi1.State == HAL_SPI_STATE_READY)
+    {
+        DC_HIGH;
+        HAL_SPI_Transmit_DMA(&hspi1, buffer, buffersize);
+    }
+#else
     DC_HIGH;
-    HAL_SPI_Transmit(&hspi1, buffer, buffersize, HAL_MAX_DELAY);
+    HAL_SPI_Transmit_DMA(&hspi1, buffer, buffersize);
+#endif
 }
 
 void OLED_Clean()
 {
-    for (uint32_t i = 0; i < 1024; i++)
+    for (uint16_t i = 0; i < 1024; i++)
     {
         GRAM[i] = 0x00;
     }
@@ -80,13 +88,11 @@ void OLED_Clean()
 
 void OLED_Update()
 {
-    for (uint8_t i = 0; i < 8; i++)
-    {
-        OLED_WriteCmd(0xB0 + i);
-        OLED_WriteCmd(0x00);
-        OLED_WriteCmd(0x10);
-        OLED_WriteData(&GRAM[128 * i], 128);
-    }
+    //一定要等所有数据全部写完再进行Update
+    OLED_WriteCmd(0xB0);
+    OLED_WriteCmd(0x00);
+    OLED_WriteCmd(0x10);
+    OLED_WriteData(GRAM, 1024);
 }
 
 void OLED_DrawPixel(uint8_t x, uint8_t y, uint8_t color)
