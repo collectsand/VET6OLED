@@ -95,4 +95,6 @@ MDK-ARM/vet6/main.o
 MDK-ARM/vet6/oled.d
 MDK-ARM/vet6/oled.o
 MDK-ARM/vet6/oledfonts.d
+MDK-ARM/vet6/oledfonts.o
 MDK-ARM/vet6/vet6.axf
+.mxproject
