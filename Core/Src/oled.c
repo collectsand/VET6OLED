@@ -1,8 +1,8 @@
 #include "oled.h"
 
 uint8_t GRAM[1024] = {0};
-OLED_Poisition_struct OLED_Poisition;
-FPS_Struct FPS;
+OLED_PoisitionStruct OLED_Poisition;
+OLED_FPSStruct OLED_FPS;
 
 void OLED_Init()
 {
@@ -95,6 +95,8 @@ void OLED_Update()
     OLED_WriteData(GRAM, 1024);
 }
 
+//x:0-127
+//y:0-63
 void OLED_DrawPixel(uint8_t x, uint8_t y, uint8_t color)
 {
     if (color == White)

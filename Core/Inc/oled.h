@@ -22,15 +22,17 @@ typedef struct
     uint8_t FPS_001;
     uint8_t FPS_010;
     uint8_t FPS_100;
-} FPS_Struct;
+} OLED_FPSStruct;
 
 typedef struct
 {
     uint8_t x;
     uint8_t y;
-} OLED_Poisition_struct;
+} OLED_PoisitionStruct;
 
 extern uint8_t GRAM[1024];
+extern OLED_PoisitionStruct OLED_Poisition;
+extern OLED_FPSStruct OLED_FPS;
 
 void OLED_Init();
 void OLED_Reset();

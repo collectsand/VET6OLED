@@ -3,8 +3,8 @@
 
 #include "main.h"
 
-extern const uint8_t ch_A[16];
-extern const uint8_t chinese_qing[32];
+extern const uint8_t ch_A[];
+extern const uint8_t ch_FPS[];
 extern const uint8_t OLED_Number[];
 
 #endif

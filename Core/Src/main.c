@@ -59,7 +59,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
-
 /**
   * @brief  The application entry point.
   * @retval int
@@ -95,20 +94,28 @@ int main(void)
     /* USER CODE BEGIN 2 */
     HAL_TIM_Base_Start_IT(&htim1);
     OLED_Init();
-    OLED_WriteChar(ch_A, 63, 15);
-    OLED_WriteChinese(chinese_qing, 63, 31);
-    OLED_WriteChar(&OLED_Number[16 * 5], 63, 47);
-    OLED_Update();
 
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+    OLED_FPS.FPS = 0;
     while (1)
     {
+        OLED_Poisition.x = 30;
+        OLED_Poisition.y = 32;
 
+        OLED_WriteChar(ch_FPS, OLED_Poisition.x, OLED_Poisition.y);
+        OLED_WriteChar(&ch_FPS[16 * 1], OLED_Poisition.x + 8, OLED_Poisition.y);
+        OLED_WriteChar(&ch_FPS[16 * 2], OLED_Poisition.x + 16, OLED_Poisition.y);
+
+        OLED_WriteChar(&OLED_Number[16 * OLED_FPS.FPS_100], OLED_Poisition.x + 32, OLED_Poisition.y);
+        OLED_WriteChar(&OLED_Number[16 * OLED_FPS.FPS_010], OLED_Poisition.x + 32 + 8, OLED_Poisition.y);
+        OLED_WriteChar(&OLED_Number[16 * OLED_FPS.FPS_001], OLED_Poisition.x + 32 + 16, OLED_Poisition.y);
+
+        OLED_Update();
+        OLED_FPS.FPS++;
         /* USER CODE END WHILE */
-
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
@@ -156,7 +163,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == &htim1)
     {
-        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+        OLED_FPS.FPS_001 = OLED_FPS.FPS % 10;
+        OLED_FPS.FPS_010 = (OLED_FPS.FPS / 10) % 10;
+        OLED_FPS.FPS_100 = OLED_FPS.FPS / 100;
+        OLED_FPS.FPS = 0;
     }
 }
 
