@@ -1,0 +1,11 @@
+--cpu Cortex-M3 -g --pd "__MICROLIB SETA 1"
+-I.\RTE\_vet6
+-Id:\Keil_v5\ARM\PACK\ARM\CMSIS\5.8.0\CMSIS\Core\Include
+-Id:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.3.0\Device\Include
+--pd "__UVISION_VERSION SETA 535"
+--pd "_RTE_ SETA 1"
+--pd "STM32F10X_HD SETA 1"
+--pd "_RTE_ SETA 1"
+--list startup_stm32f103xe.lst
+--xref -o vet6\startup_stm32f103xe.o
+--depend vet6\startup_stm32f103xe.d "startup_stm32f103xe.s"
