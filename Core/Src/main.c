@@ -23,11 +23,14 @@
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdio.h"
 #include "oled.h"
+#include "mpu6050.h"
+#include "dma.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,8 +60,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -66,7 +69,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 int main(void)
 {
     /* USER CODE BEGIN 1 */
-
+    uint16_t a = 111, b = 222, c = 333;
     /* USER CODE END 1 */
 
     /* MCU Configuration--------------------------------------------------------*/
@@ -91,31 +94,32 @@ int main(void)
     MX_SPI1_Init();
     MX_I2C1_Init();
     MX_TIM1_Init();
+    MX_USART1_UART_Init();
     /* USER CODE BEGIN 2 */
-    HAL_TIM_Base_Start_IT(&htim1);
     OLED_Init();
-
+    MPU6050_initialize();
+    DMP_Init();
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    OLED_FPS.FPS = 0;
     while (1)
     {
-        OLED_Poisition.x = 30;
-        OLED_Poisition.y = 32;
+        Read_DMP();
+        printf("gyro: %d %d %d\naccel: %d %d %d\npitch: %f\nroll: %f\nyaw: %f\n\n",
+               gyro[0], gyro[1], gyro[2], accel[0], accel[1], accel[2], Pitch, Roll, Yaw);
 
-        OLED_WriteChar(ch_FPS, OLED_Poisition.x, OLED_Poisition.y);
-        OLED_WriteChar(&ch_FPS[16 * 1], OLED_Poisition.x + 8, OLED_Poisition.y);
-        OLED_WriteChar(&ch_FPS[16 * 2], OLED_Poisition.x + 16, OLED_Poisition.y);
-
-        OLED_WriteChar(&OLED_Number[16 * OLED_FPS.FPS_100], OLED_Poisition.x + 32, OLED_Poisition.y);
-        OLED_WriteChar(&OLED_Number[16 * OLED_FPS.FPS_010], OLED_Poisition.x + 32 + 8, OLED_Poisition.y);
-        OLED_WriteChar(&OLED_Number[16 * OLED_FPS.FPS_001], OLED_Poisition.x + 32 + 16, OLED_Poisition.y);
+        OLED_WriteString("Pitch", 0, 8);
+        OLED_WriteNumber((int)Pitch, 48, 8);
+        OLED_WriteString("Roll", 0, 24);
+        OLED_WriteNumber((int)Roll, 48, 24);
+        OLED_WriteString("Yaw", 0, 40);
+        OLED_WriteNumber((int)Yaw, 48, 40);
 
         OLED_Update();
-        OLED_FPS.FPS++;
+
         /* USER CODE END WHILE */
+
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
@@ -159,16 +163,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim == &htim1)
-    {
-        OLED_FPS.FPS_001 = OLED_FPS.FPS % 10;
-        OLED_FPS.FPS_010 = (OLED_FPS.FPS / 10) % 10;
-        OLED_FPS.FPS_100 = OLED_FPS.FPS / 100;
-        OLED_FPS.FPS = 0;
-    }
-}
 
 /* USER CODE END 4 */
 
@@ -179,6 +173,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
     /* USER CODE BEGIN Error_Handler_Debug */
+    printf("Error Handler\n");
     /* User can add his own implementation to report the HAL error return state */
     __disable_irq();
     while (1)
