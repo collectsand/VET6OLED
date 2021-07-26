@@ -22,7 +22,6 @@ OLED_FPSStruct OLED_FPS;
 
 void OLED_Init()
 {
-    HAL_Delay(1000);
     OLED_Reset();
     HAL_Delay(100);
 

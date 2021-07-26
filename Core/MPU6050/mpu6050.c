@@ -18,10 +18,11 @@
 #define q30 1073741824.0f //使用 MPU6050 的 DMP 输出的四元数是 q30 格式的，也就是浮点数放大了 2 的 30 次方倍。
 
 short gyro[3], accel[3], sensors;
-float Pitch=0, Yaw=0, Roll=0;
+float Pitch = 0, Yaw = 0, Roll = 0;
 float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
-uint8_t MPU6050_NewData;
+float bia1 = 0, bia2 = 0, bia3 = 0;
+uint8_t MPU6050ready = 0;
 
 static unsigned short inv_row_2_scale(const signed char *row)
 {
@@ -320,9 +321,9 @@ void Read_DMP(void)
         q1 = quat[1] / q30;
         q2 = quat[2] / q30;
         q3 = quat[3] / q30;
-        Pitch = sinf(-2 * q1 * q3 + 2 * q0 * q2) * 57.3; //转换成角度57.3=180/Π
-        Roll = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3;
-        Yaw = atan2(2 * (q1 * q2 + q0 * q3), q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) * 57.3;
+        Pitch = sinf(-2 * q1 * q3 + 2 * q0 * q2) * 57.3 - bia1; //转换成角度57.3=180/Π
+        Roll = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3 - bia2;
+        Yaw = atan2(2 * (q1 * q2 + q0 * q3), q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) * 57.3 - bia3;
     }
 }
 /**************************************************************************

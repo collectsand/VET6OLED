@@ -55,8 +55,8 @@
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
-          <BrowseInformation>0</BrowseInformation>
-          <ListingPath></ListingPath>
+          <BrowseInformation>1</BrowseInformation>
+          <ListingPath>D:\documents\</ListingPath>
           <HexFormatSelection>0</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc; ../Drivers/STM32F1xx_HAL_Driver/Inc; ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32F1xx/Include; ../Drivers/CMSIS/Include; ..\Core\oled; ..\Core\MPU6050</IncludePath>
+              <IncludePath>../Core/Inc;          ../Drivers/STM32F1xx_HAL_Driver/Inc;          ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;          ../Drivers/CMSIS/Device/ST/STM32F1xx/Include;          ../Drivers/CMSIS/Include;          ..\Core\oled;          ..\Core\MPU6050;          ..\Core\servomotor</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -769,6 +769,21 @@
               <FileName>mpuI2C.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\MPU6050\mpuI2C.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ServoMotor</GroupName>
+          <Files>
+            <File>
+              <FileName>ServoMotor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\servomotor\ServoMotor.c</FilePath>
+            </File>
+            <File>
+              <FileName>protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\servomotor\protocol.c</FilePath>
             </File>
           </Files>
         </Group>

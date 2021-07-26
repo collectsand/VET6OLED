@@ -25,12 +25,15 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
 #include "oled.h"
 #include "mpu6050.h"
 #include "dma.h"
+#include "ServoMotor.h"
+#include "protocol.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,13 +52,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -69,7 +72,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 int main(void)
 {
     /* USER CODE BEGIN 1 */
-    uint16_t a = 111, b = 222, c = 333;
     /* USER CODE END 1 */
 
     /* MCU Configuration--------------------------------------------------------*/
@@ -95,20 +97,30 @@ int main(void)
     MX_I2C1_Init();
     MX_TIM1_Init();
     MX_USART1_UART_Init();
+    MX_TIM4_Init();
     /* USER CODE BEGIN 2 */
+    HAL_TIM_Base_Start_IT(&htim4);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     OLED_Init();
     MPU6050_initialize();
     DMP_Init();
+    PID_Init(0, 0.2, 0.2, 0.2, 180, 0);
     /* USER CODE END 2 */
+    angle = 90;
+#ifdef PID_ASSISTANT_EN
+    set_computer_value(SEND_STOP_CMD, CURVES_CH1, NULL, 0);          // 同步上位机的启动按钮状态
+    set_computer_value(SEND_TARGET_CMD, CURVES_CH1, &pid.target, 1); // 给通道 1 发送目标值
+#endif
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+
     while (1)
     {
-        Read_DMP();
-        printf("gyro: %d %d %d\naccel: %d %d %d\npitch: %f\nroll: %f\nyaw: %f\n\n",
-               gyro[0], gyro[1], gyro[2], accel[0], accel[1], accel[2], Pitch, Roll, Yaw);
+        receiving_process();
 
+        Read_DMP();
+        Steering_SetAngle(angle, TIM_CHANNEL_1);
         OLED_WriteString("Pitch", 0, 8);
         OLED_WriteNumber((int)Pitch, 48, 8);
         OLED_WriteString("Roll", 0, 24);
@@ -116,8 +128,10 @@ int main(void)
         OLED_WriteString("Yaw", 0, 40);
         OLED_WriteNumber((int)Yaw, 48, 40);
 
+        Steering_SetAngle(angle, TIM_CHANNEL_1);
+        OLED_WriteString("Angle", 0, 56);
+        OLED_WriteNumber(angle, 48, 56);
         OLED_Update();
-
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
@@ -163,6 +177,28 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (MPU6050ready)
+        angle = PID_ControllerPos(Yaw);
+
+#ifdef PID_ASSISTANT_EN
+    set_computer_value(SEND_FACT_CMD, CURVES_CH1, &angle, 1); // 给通道 1 发送实际值
+#endif
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    bia1 = Pitch;
+    bia2 = Roll;
+    bia3 = Yaw;
+
+    MPU6050ready = 1;
+
+#ifdef PID_ASSISTANT_EN
+    set_computer_value(SEND_START_CMD, CURVES_CH1, NULL, 0); // 同步上位机的启动按钮状态
+#endif
+}
 
 /* USER CODE END 4 */
 
