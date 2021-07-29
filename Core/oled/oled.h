@@ -1,10 +1,19 @@
 #ifndef __OLED_H
 #define __OLED_H
 
-#define _OLED_USE_DMA_
+// #define OLED_USE_DMA
 
-#define DC_HIGH HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_SET)
-#define DC_LOW HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_RESET)
+#define OLED_SPI_HANDLE hspi1
+#define OLED_DC_GPIO GPIOE
+#define OLED_DC_PIN GPIO_PIN_6
+#define OLED_RST_GPIO GPIOE
+#define OLED_RST_PIN GPIO_PIN_5
+
+#define DC_LOW HAL_GPIO_WritePin(OLED_DC_GPIO, OLED_DC_PIN, GPIO_PIN_RESET)
+#define DC_HIGH HAL_GPIO_WritePin(OLED_DC_GPIO, OLED_DC_PIN, GPIO_PIN_SET)
+
+#define RST_LOW HAL_GPIO_WritePin(OLED_RST_GPIO, OLED_RST_PIN, GPIO_PIN_RESET)
+#define RST_HIGH HAL_GPIO_WritePin(OLED_RST_GPIO, OLED_RST_PIN, GPIO_PIN_SET)
 
 #include "stm32f1xx_hal.h"
 
@@ -14,23 +23,9 @@ typedef enum
     White = 1
 } OLED_Color;
 
-typedef struct
-{
-    uint8_t FPS;
-    uint8_t FPS_001;
-    uint8_t FPS_010;
-    uint8_t FPS_100;
-} OLED_FPSStruct;
-
-typedef struct
-{
-    uint8_t x;
-    uint8_t y;
-} OLED_PoisitionStruct;
-
 extern uint8_t GRAM[1024];
-extern OLED_PoisitionStruct OLED_Poisition;
-extern OLED_FPSStruct OLED_FPS;
+extern uint16_t OLED_FPS;
+extern uint8_t OLED_Display;
 
 void OLED_Init();
 void OLED_Reset();

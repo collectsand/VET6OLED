@@ -57,7 +57,6 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
 /* USER CODE END PFP */
 
@@ -99,38 +98,65 @@ int main(void)
     MX_USART1_UART_Init();
     MX_TIM4_Init();
     /* USER CODE BEGIN 2 */
+
+    // STM32串口极其傻逼（尤其是中断），请务必自己重写串口中断函数
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
     HAL_TIM_Base_Start_IT(&htim4);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&PWM_TIM_HANDLE, PWM_TIM_CHANNLE);
+
     OLED_Init();
+
     MPU6050_initialize();
     DMP_Init();
-    PID_Init(0, 0.2, 0.2, 0.2, 180, 0);
-    /* USER CODE END 2 */
-    angle = 90;
+
+    protocol_init();
+    PID_Init(0, 0.5, 0.15, 0.5, 180, 0);
 #ifdef PID_ASSISTANT_EN
-    set_computer_value(SEND_STOP_CMD, CURVES_CH1, NULL, 0);          // 同步上位机的启动按钮状态
-    set_computer_value(SEND_TARGET_CMD, CURVES_CH1, &pid.target, 1); // 给通道 1 发送目标值
+    // 发送target
+    set_computer_value(SEND_TARGET_CMD, CURVES_CH1, &pid.target, 1);
+    // 发送PID
+    float pid_temp[3] = {pid.Kp, pid.Ki, pid.Kd};
+    set_computer_value(SEND_P_I_D_CMD, CURVES_CH1, pid_temp, 3);
+    // 发送周期
+    uint32_t temp = GET_BASIC_TIM_PERIOD();
+    set_computer_value(SEND_PERIOD_CMD, CURVES_CH1, &temp, 1);
+
 #endif
+    angle = 90;
+    Steering_SetAngle(angle, TIM_CHANNEL_1);
+    /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
 
     while (1)
     {
-        receiving_process();
 
+        receiving_process();
         Read_DMP();
         Steering_SetAngle(angle, TIM_CHANNEL_1);
-        OLED_WriteString("Pitch", 0, 8);
-        OLED_WriteNumber((int)Pitch, 48, 8);
-        OLED_WriteString("Roll", 0, 24);
-        OLED_WriteNumber((int)Roll, 48, 24);
-        OLED_WriteString("Yaw", 0, 40);
-        OLED_WriteNumber((int)Yaw, 48, 40);
-
-        Steering_SetAngle(angle, TIM_CHANNEL_1);
-        OLED_WriteString("Angle", 0, 56);
-        OLED_WriteNumber(angle, 48, 56);
+        if (OLED_Display == 0)
+        {
+            OLED_WriteString("Pitch", 0, 8);
+            OLED_WriteNumber((int)Pitch, 48, 8);
+            OLED_WriteString("Roll", 0, 24);
+            OLED_WriteNumber((int)Roll, 48, 24);
+            OLED_WriteString("Yaw", 0, 40);
+            OLED_WriteNumber((int)Yaw, 48, 40);
+            OLED_WriteString("Angle", 0, 56);
+            OLED_WriteNumber(angle, 48, 56);
+        }
+        else
+        {
+            OLED_WriteString("Kp", 0, 8);
+            OLED_WriteNumber((int)(pid.Kp * 100), 48, 8);
+            OLED_WriteString("Ki", 0, 24);
+            OLED_WriteNumber((int)(pid.Ki * 100), 48, 24);
+            OLED_WriteString("Kd", 0, 40);
+            OLED_WriteNumber((int)(pid.Kd * 100), 48, 40);
+            OLED_WriteString("Target", 0, 56);
+            OLED_WriteNumber((int)pid.target, 48, 56);
+        }
         OLED_Update();
         /* USER CODE END WHILE */
 
@@ -177,28 +203,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (MPU6050ready)
-        angle = PID_ControllerPos(Yaw);
-
-#ifdef PID_ASSISTANT_EN
-    set_computer_value(SEND_FACT_CMD, CURVES_CH1, &angle, 1); // 给通道 1 发送实际值
-#endif
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    bia1 = Pitch;
-    bia2 = Roll;
-    bia3 = Yaw;
-
-    MPU6050ready = 1;
-
-#ifdef PID_ASSISTANT_EN
-    set_computer_value(SEND_START_CMD, CURVES_CH1, NULL, 0); // 同步上位机的启动按钮状态
-#endif
-}
 
 /* USER CODE END 4 */
 

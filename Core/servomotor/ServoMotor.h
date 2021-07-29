@@ -1,6 +1,10 @@
 #ifndef __SERVOMOTOR_H
 #define __SERVOMOTOR_H
 
+#define PWM_TIM_HANDLE htim1
+#define PWM_TIM_CHANNLE TIM_CHANNEL_1
+#define PID_TIM_HANDLE htim4
+
 #include "main.h"
 
 typedef struct

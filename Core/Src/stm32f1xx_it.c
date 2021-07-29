@@ -24,9 +24,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "tim.h"
+#include "oled.h"
 #include "mpu6050.h"
 #include "ServoMotor.h"
 #include "protocol.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +53,8 @@
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -262,20 +265,23 @@ void TIM4_IRQHandler(void)
     /* USER CODE END TIM4_IRQn 1 */
 }
 
-uint8_t dr;
-volatile uint8_t sr_status;
 /**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
 {
     /* USER CODE BEGIN USART1_IRQn 0 */
-    sr_status = huart1.Instance->SR & (1 << 3); //clear SR register ORE bit status
-    dr = huart1.Instance->DR;
-    protocol_data_recv(&dr, 1);
+    volatile uint8_t sr_status;
+    uint8_t dr;
 
+    sr_status = huart1.Instance->SR & (1 << 3); //clear SR register ORE bit status
+    if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE))
+    {
+        dr = huart1.Instance->DR;
+        protocol_data_recv(&dr, 1);
+    }
     /* USER CODE END USART1_IRQn 0 */
-    HAL_UART_IRQHandler(&huart1);
+    // HAL_UART_IRQHandler(&huart1);
     /* USER CODE BEGIN USART1_IRQn 1 */
 
     /* USER CODE END USART1_IRQn 1 */
@@ -296,6 +302,39 @@ void EXTI15_10_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (MPU6050_Ready)
+        angle = PID_ControllerPos(Yaw);
 
+#ifdef PID_ASSISTANT_EN
+    set_computer_value(SEND_FACT_CMD, CURVES_CH1, &Yaw, 1);
+#endif
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (MPU6050_Ready)
+    {
+        OLED_Display = !OLED_Display;
+        OLED_Clean();
+    }
+    else
+    {
+        bia1 = Pitch;
+        bia2 = Roll;
+        bia3 = Yaw;
+
+        Pitch = 0;
+        Roll = 0;
+        Yaw = 0;
+
+        MPU6050_Ready = 1;
+    }
+
+#ifdef PID_ASSISTANT_EN
+    set_computer_value(SEND_START_CMD, CURVES_CH1, NULL, 0); // 同步上位机的启动按钮状�??
+#endif
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -22,7 +22,7 @@ float Pitch = 0, Yaw = 0, Roll = 0;
 float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
 float bia1 = 0, bia2 = 0, bia3 = 0;
-uint8_t MPU6050ready = 0;
+uint8_t MPU6050_Ready = 0;
 
 static unsigned short inv_row_2_scale(const signed char *row)
 {

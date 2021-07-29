@@ -133,10 +133,6 @@ void MX_TIM4_Init(void)
   }
   /* USER CODE BEGIN TIM4_Init 2 */
 
-#ifdef PID_ASSISTANT_EN
-    uint32_t temp = GET_BASIC_TIM_PERIOD();                    // 计算周期，单位ms
-    set_computer_value(SEND_PERIOD_CMD, CURVES_CH1, &temp, 1); // 给�?�道 1 发�?�目标�??
-#endif
 
   /* USER CODE END TIM4_Init 2 */
 

@@ -17,8 +17,8 @@
 #include "stdlib.h"
 
 uint8_t GRAM[1024] = {0};
-OLED_PoisitionStruct OLED_Poisition;
-OLED_FPSStruct OLED_FPS;
+uint16_t OLED_FPS;
+uint8_t OLED_Display = 0;
 
 void OLED_Init()
 {
@@ -74,29 +74,29 @@ void OLED_Init()
 
 void OLED_Reset()
 {
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5, GPIO_PIN_RESET);
+    RST_LOW;
     HAL_Delay(10);
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5, GPIO_PIN_SET);
+    RST_HIGH;
     HAL_Delay(10);
 }
 
 void OLED_WriteCmd(uint8_t cmd)
 {
     DC_LOW;
-    HAL_SPI_Transmit(&hspi1, &cmd, 1, HAL_MAX_DELAY);
+    HAL_SPI_Transmit(&OLED_SPI_HANDLE, &cmd, 1, HAL_MAX_DELAY);
 }
 
 void OLED_WriteData(uint8_t *buffer, uint16_t buffersize)
 {
-#ifdef _OLED_USE_DMA_
-    if (hspi1.State == HAL_SPI_STATE_READY)
+#ifdef OLED_USE_DMA
+    if (OLED_SPI.State == HAL_SPI_STATE_READY)
     {
         DC_HIGH;
-        HAL_SPI_Transmit_DMA(&hspi1, buffer, buffersize);
+        HAL_SPI_Transmit_DMA(&OLED_SPI_HANDLE, buffer, buffersize);
     }
 #else
     DC_HIGH;
-    HAL_SPI_Transmit_DMA(&hspi1, buffer, buffersize);
+    HAL_SPI_Transmit(&OLED_SPI_HANDLE, buffer, buffersize, HAL_MAX_DELAY);
 #endif
 }
 
@@ -115,6 +115,14 @@ void OLED_Update()
     OLED_WriteCmd(0x00);
     OLED_WriteCmd(0x10);
     OLED_WriteData(GRAM, 1024);
+    // uint8_t i;
+    // for (i = 0; i < 8; i++)
+    // {
+    //     OLED_WriteCmd(0xB0 + i);
+    //     OLED_WriteCmd(0x00);
+    //     OLED_WriteCmd(0x10);
+    //     OLED_WriteData(GRAM, 128);
+    // }
 }
 
 //x:0-127
