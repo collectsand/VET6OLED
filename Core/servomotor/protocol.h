@@ -7,7 +7,7 @@
 #include "stm32f1xx_hal.h"
 // #include "./usart/bsp_debug_usart.h"
 
-#define PID_ASSISTANT_EN
+// #define PID_ASSISTANT_EN
 // htim4修改为使用的时基定时器
 #define SET_BASIC_TIM_PERIOD(T) __HAL_TIM_SET_AUTORELOAD(&htim4, (T)*100 - 1)    // 设置定时器的周期（1~1000ms）
 #define GET_BASIC_TIM_PERIOD() ((__HAL_TIM_GET_AUTORELOAD(&htim4) + 1) / 100.0f) // 获取定时器的周期，单位ms

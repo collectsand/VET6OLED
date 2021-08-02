@@ -14,7 +14,7 @@
 #include "oled.h"
 #include "spi.h"
 #include "oledfonts.h"
-#include "stdlib.h"
+#include "math.h"
 
 uint8_t GRAM[1024] = {0};
 uint16_t OLED_FPS;
@@ -82,22 +82,18 @@ void OLED_Reset()
 
 void OLED_WriteCmd(uint8_t cmd)
 {
+    CS_LOW;
     DC_LOW;
     HAL_SPI_Transmit(&OLED_SPI_HANDLE, &cmd, 1, HAL_MAX_DELAY);
+    CS_HIGH;
 }
 
 void OLED_WriteData(uint8_t *buffer, uint16_t buffersize)
 {
-#ifdef OLED_USE_DMA
-    if (OLED_SPI.State == HAL_SPI_STATE_READY)
-    {
-        DC_HIGH;
-        HAL_SPI_Transmit_DMA(&OLED_SPI_HANDLE, buffer, buffersize);
-    }
-#else
+    CS_LOW;
     DC_HIGH;
     HAL_SPI_Transmit(&OLED_SPI_HANDLE, buffer, buffersize, HAL_MAX_DELAY);
-#endif
+    CS_HIGH;
 }
 
 void OLED_Clean()
@@ -176,26 +172,32 @@ void OLED_WriteString(char *str, uint8_t x, uint8_t y)
     }
 }
 
-void OLED_WriteNumber(int number, uint8_t x, uint8_t y)
+void OLED_WriteNumber(float number, uint8_t x, uint8_t y)
 {
-    uint8_t h, m, l;
-    h = abs(number) / 100;
-    m = (abs(number) / 10) % 10;
-    l = abs(number) % 10;
+    uint16_t n4, n3, n2, n1;
+
+    n4 = (uint16_t)(fabs(number) / 100);
+    n3 = ((uint16_t)(fabs(number)) / 10) % 10;
+    n2 = ((uint16_t)fabs(number)) % 10;
+    n1 = ((uint16_t)(fabs(number) * 10)) % 10;
 
     if (number > 0)
     {
         OLED_WriteChar(' ', x, y);
-        OLED_WriteChar(h + 16 + ' ', x + 8, y);
-        OLED_WriteChar(m + 16 + ' ', x + 16, y);
-        OLED_WriteChar(l + 16 + ' ', x + 24, y);
+        OLED_WriteChar(n4 + 16 + ' ', x + 8, y);
+        OLED_WriteChar(n3 + 16 + ' ', x + 16, y);
+        OLED_WriteChar(n2 + 16 + ' ', x + 24, y);
+        OLED_WriteChar('.', x + 32, y);
+        OLED_WriteChar(n1 + 16 + ' ', x + 40, y);
     }
     else
     {
         OLED_WriteChar('-', x, y);
-        OLED_WriteChar(h + 16 + ' ', x + 8, y);
-        OLED_WriteChar(m + 16 + ' ', x + 16, y);
-        OLED_WriteChar(l + 16 + ' ', x + 24, y);
+        OLED_WriteChar(n4 + 16 + ' ', x + 8, y);
+        OLED_WriteChar(n3 + 16 + ' ', x + 16, y);
+        OLED_WriteChar(n2 + 16 + ' ', x + 24, y);
+        OLED_WriteChar('.', x + 32, y);
+        OLED_WriteChar(n1 + 16 + ' ', x + 40, y);
     }
 }
 

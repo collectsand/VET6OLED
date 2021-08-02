@@ -19,8 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "dma.h"
-#include "i2c.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -30,8 +28,10 @@
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
 #include "oled.h"
-#include "mpu6050.h"
-#include "dma.h"
+#include "icm20602.h"
+#include "attitude_solution.h"
+// #include "mpu6050.h"
+// #include "dma.h"
 #include "ServoMotor.h"
 #include "protocol.h"
 /* USER CODE END Includes */
@@ -62,6 +62,49 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// #define PID_TEST
+#ifdef PID_TEST
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_SPI1_Init();
+    MX_I2C1_Init();
+    MX_TIM1_Init();
+    MX_USART1_UART_Init();
+    MX_USART2_UART_Init();
+
+    MX_TIM4_Init();
+
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+
+    OLED_Init();
+    PID_Init(&pid, 100, 0.25, 0.2, 0.2);
+
+    angle = 90;
+    Yaw = 0;
+    while (1)
+    {
+        angle = 90.0 + PID_ControllerPos(&pid, Yaw);
+        Yaw = angle - 90;
+
+        OLED_WriteString("Pitch", 0, 8);
+        OLED_WriteNumber((int)Pitch, 48, 8);
+        OLED_WriteString("Roll", 0, 24);
+        OLED_WriteNumber((int)Roll, 48, 24);
+        OLED_WriteString("Yaw", 0, 40);
+        OLED_WriteNumber((int)Yaw, 48, 40);
+        OLED_WriteString("Angle", 0, 56);
+        OLED_WriteNumber(angle, 48, 56);
+        OLED_Update();
+    }
+}
+#else
+
 /* USER CODE END 0 */
 
 /**
@@ -91,37 +134,37 @@ int main(void)
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_DMA_Init();
     MX_SPI1_Init();
-    MX_I2C1_Init();
     MX_TIM1_Init();
     MX_USART1_UART_Init();
     MX_TIM4_Init();
+    MX_SPI2_Init();
+    MX_USART2_UART_Init();
     /* USER CODE BEGIN 2 */
 
-    // STM32串口极其傻逼（尤其是中断），请务必自己重写串口中断函数
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
     HAL_TIM_Base_Start_IT(&htim4);
     HAL_TIM_PWM_Start(&PWM_TIM_HANDLE, PWM_TIM_CHANNLE);
 
     OLED_Init();
 
-    MPU6050_initialize();
-    DMP_Init();
+    icm20602_init_spi();
 
-    protocol_init();
-    PID_Init(0, 0.5, 0.15, 0.5, 180, 0);
+    PID_Init(&pid, 0, 0.2, 0.2, 0.2);
+
 #ifdef PID_ASSISTANT_EN
-    // 发送target
+    protocol_init();
+
     set_computer_value(SEND_TARGET_CMD, CURVES_CH1, &pid.target, 1);
-    // 发送PID
+
     float pid_temp[3] = {pid.Kp, pid.Ki, pid.Kd};
     set_computer_value(SEND_P_I_D_CMD, CURVES_CH1, pid_temp, 3);
-    // 发送周期
+
     uint32_t temp = GET_BASIC_TIM_PERIOD();
     set_computer_value(SEND_PERIOD_CMD, CURVES_CH1, &temp, 1);
 
 #endif
+
     angle = 90;
     Steering_SetAngle(angle, TIM_CHANNEL_1);
     /* USER CODE END 2 */
@@ -132,39 +175,43 @@ int main(void)
     while (1)
     {
 
-        receiving_process();
-        Read_DMP();
-        Steering_SetAngle(angle, TIM_CHANNEL_1);
+        printf("icm_acc: %d,%d,%d\n", icm_acc_x, icm_acc_y, icm_acc_z);
+        printf("icm_gyro: %d,%d,%d\n", icm_gyro_x, icm_gyro_y, icm_gyro_z);
+        printf("%.2f,%.2f,%.2f\n\n", eulerAngle.pitch, eulerAngle.roll, eulerAngle.yaw);
+
         if (OLED_Display == 0)
         {
             OLED_WriteString("Pitch", 0, 8);
-            OLED_WriteNumber((int)Pitch, 48, 8);
+            OLED_WriteNumber(eulerAngle.pitch, 48, 8);
             OLED_WriteString("Roll", 0, 24);
-            OLED_WriteNumber((int)Roll, 48, 24);
+            OLED_WriteNumber(eulerAngle.roll, 48, 24);
             OLED_WriteString("Yaw", 0, 40);
-            OLED_WriteNumber((int)Yaw, 48, 40);
+            OLED_WriteNumber(eulerAngle.yaw, 48, 40);
             OLED_WriteString("Angle", 0, 56);
             OLED_WriteNumber(angle, 48, 56);
         }
         else
         {
             OLED_WriteString("Kp", 0, 8);
-            OLED_WriteNumber((int)(pid.Kp * 100), 48, 8);
+            OLED_WriteNumber((pid.Kp * 100), 48, 8);
             OLED_WriteString("Ki", 0, 24);
-            OLED_WriteNumber((int)(pid.Ki * 100), 48, 24);
+            OLED_WriteNumber((pid.Ki * 100), 48, 24);
             OLED_WriteString("Kd", 0, 40);
-            OLED_WriteNumber((int)(pid.Kd * 100), 48, 40);
+            OLED_WriteNumber((pid.Kd * 100), 48, 40);
             OLED_WriteString("Target", 0, 56);
-            OLED_WriteNumber((int)pid.target, 48, 56);
+            OLED_WriteNumber(pid.target, 48, 56);
         }
         OLED_Update();
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
+#ifdef PID_ASSISTANT_EN
+        receiving_process();
+#endif
     }
     /* USER CODE END 3 */
 }
-
+#endif
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -213,7 +260,6 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
     /* USER CODE BEGIN Error_Handler_Debug */
-    printf("Error Handler\n");
     /* User can add his own implementation to report the HAL error return state */
     __disable_irq();
     while (1)
