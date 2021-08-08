@@ -24,7 +24,7 @@ void PID_Init(PID_StructTypedef *pid, float target, float kp, float ki, float kd
     pid->derivative = 0.0;
     pid->lastderivative = 0.0;
     pid->increment = 0.0;
-
+    pid->Enable = 0;
 }
 
 float PID_ControllerPos(PID_StructTypedef *pid, float actual)
@@ -33,7 +33,7 @@ float PID_ControllerPos(PID_StructTypedef *pid, float actual)
 
     thiserr = pid->target - actual;
 
-    // 变积分
+    // 积分分离
     if (thiserr <= 70)
     {
         pid->integral += (thiserr + pid->lasterr) / 2.0;
@@ -92,6 +92,23 @@ float PID_ControllerInc(PID_StructTypedef *pid, float actual)
         pid->result = pid->min;
 
     return pid->result;
+}
+
+void PID_SetPID(PID_StructTypedef *pid, float kp, float ki, float kd)
+{
+    pid->Kp = kp;
+    pid->Ki = ki;
+    pid->Kd = kd;
+}
+
+void PID_Enable(PID_StructTypedef *pid)
+{
+    pid->Enable = 1;
+}
+
+void PID_Reset(PID_StructTypedef *pid)
+{
+    pid->Enable = 0;
 }
 
 void Steering_SetAngle(float angle, uint32_t TIM_CHANNEL_x)

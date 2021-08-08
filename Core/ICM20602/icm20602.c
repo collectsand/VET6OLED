@@ -125,14 +125,10 @@ void icm20602_self3_check(void)
 void icm20602_init_spi(void)
 {
     uint8_t val = 0x0;
-    printf("icm init start\n");
-    HAL_Delay(10); //上电延时
-    printf("delay 10ms\n");
+    HAL_Delay(10);          //上电延时
     icm20602_self3_check(); //检测
-    printf("self check\n");
 
     icm_spi_w_reg_byte(ICM20602_PWR_MGMT_1, 0x80); //复位设备
-    printf("reset icm\n");
 
     HAL_Delay(2);
     do

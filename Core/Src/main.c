@@ -34,6 +34,7 @@
 // #include "dma.h"
 #include "ServoMotor.h"
 #include "protocol.h"
+#include "usmart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,48 +63,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-// #define PID_TEST
-#ifdef PID_TEST
-
-int main(void)
-{
-    HAL_Init();
-    SystemClock_Config();
-    MX_GPIO_Init();
-    MX_DMA_Init();
-    MX_SPI1_Init();
-    MX_I2C1_Init();
-    MX_TIM1_Init();
-    MX_USART1_UART_Init();
-    MX_USART2_UART_Init();
-
-    MX_TIM4_Init();
-
-    __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-
-    OLED_Init();
-    PID_Init(&pid, 100, 0.25, 0.2, 0.2);
-
-    angle = 90;
-    Yaw = 0;
-    while (1)
-    {
-        angle = 90.0 + PID_ControllerPos(&pid, Yaw);
-        Yaw = angle - 90;
-
-        OLED_WriteString("Pitch", 0, 8);
-        OLED_WriteNumber((int)Pitch, 48, 8);
-        OLED_WriteString("Roll", 0, 24);
-        OLED_WriteNumber((int)Roll, 48, 24);
-        OLED_WriteString("Yaw", 0, 40);
-        OLED_WriteNumber((int)Yaw, 48, 40);
-        OLED_WriteString("Angle", 0, 56);
-        OLED_WriteNumber(angle, 48, 56);
-        OLED_Update();
-    }
-}
-#else
 
 /* USER CODE END 0 */
 
@@ -143,6 +102,7 @@ int main(void)
     /* USER CODE BEGIN 2 */
 
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
     HAL_TIM_Base_Start_IT(&htim4);
     HAL_TIM_PWM_Start(&PWM_TIM_HANDLE, PWM_TIM_CHANNLE);
 
@@ -151,6 +111,7 @@ int main(void)
     icm20602_init_spi();
 
     PID_Init(&pid, 0, 0.2, 0.2, 0.2);
+    PID_Reset(&pid);
 
 #ifdef PID_ASSISTANT_EN
     protocol_init();
@@ -165,19 +126,20 @@ int main(void)
 
 #endif
 
+#ifdef USMART_EN
+    usmart_init(72);
+#endif
+
     angle = 90;
     Steering_SetAngle(angle, TIM_CHANNEL_1);
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+    printf("system reset complete\r\n");
 
     while (1)
     {
-
-        printf("icm_acc: %d,%d,%d\n", icm_acc_x, icm_acc_y, icm_acc_z);
-        printf("icm_gyro: %d,%d,%d\n", icm_gyro_x, icm_gyro_y, icm_gyro_z);
-        printf("%.2f,%.2f,%.2f\n\n", eulerAngle.pitch, eulerAngle.roll, eulerAngle.yaw);
 
         if (OLED_Display == 0)
         {
@@ -205,13 +167,18 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
+
+#ifdef USMART_EN
+        usmart_scan();
+#endif
+
 #ifdef PID_ASSISTANT_EN
         receiving_process();
 #endif
     }
     /* USER CODE END 3 */
 }
-#endif
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -250,6 +217,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+int fputc(int ch, FILE *f)
+{
+    HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
+    return (ch);
+}
 
 /* USER CODE END 4 */
 
